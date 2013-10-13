@@ -1,12 +1,11 @@
 ;; The first three lines of this file were inserted by DrRacket. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname repeaters) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
-;; A Repeater is a [[X -> X] -> [X -> X]]
-;; interp: a repeater takes a function
+;; A repeater is a function that
+;; Takes a natural number
 ;; And creates a function that applies
-;; that function to an input n times
-
-;; repeater :  Nat -> [[X -> X] -> [X -> X]]
+;; A function to an input n times
+;; Repeater :  Nat -> [[X -> X] -> [X -> X]]
 (define (repeater n)
   (if (= n 0) (λ (f) (λ (x) x))
       (λ (f) (λ (x) (f (((repeater (sub1 n)) f) x))))))
@@ -54,6 +53,7 @@
 (check-expect (r->n (^ (repeater 5) (repeater 3))) 125)
 (check-expect (((^ (repeater 0) (repeater 0)) sub1) 0) -1)
 (check-expect (r->n (succ double)) 3)
+
 ;; ! : Nat -> Nat
 ;; x!
 (define (! x)
