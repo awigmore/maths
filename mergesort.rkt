@@ -46,18 +46,22 @@
 (check-expect (mergesort '(1) >) '(1))
 (check-expect (mergesort '(1 234 435 23 90324 -0213 -02) >) '(90324 435 234 23 1 -02 -0213 ))
 
-;; mergesort : [List X] [X x X -> Boolean] -> [List X]
-;; Run mergesort
+;; mergesort2 : [List X] [X x X -> Boolean] -> [List X]
+;; Run mergesort using an accumulator to split the list,
+;; but definitely not in place
 (define (mergesort2 x comp)
   (cond [(or (empty? x) (empty? (rest x))) x]
         [else (local ([define m (quotient (length x) 2)]
                       [define (acc i a b)
-                        (cond [(= i m) (merge (mergesort a comp)
-                                              (mergesort b comp)
+                        (cond [(= i m) (merge (mergesort2 a comp)
+                                              (mergesort2 b comp)
                                               comp)]
                               [else (acc (add1 i) (rest a) (cons (first a) b))])])
                 (acc 0 x empty))]))
+(check-expect (mergesort2 empty >) empty)
+(check-expect (mergesort2 '(1) >) '(1))
 (check-expect (mergesort2 '(1 234 435 23 90324 -0213 -02) >) '(90324 435 234 23 1 -02 -0213 ))
-(define x (build-list 10000 (λ (n) (random 10000))))
-(time (second (mergesort x >)))
-(time (first (mergesort2 x >)))
+(define x (build-list 100000 (λ (n) (random 10000))))
+;; Time tests indicate mergesort2 is more efficient
+(time (first (mergesort x >)))
+(time (first (reverse (mergesort2 x >))))
