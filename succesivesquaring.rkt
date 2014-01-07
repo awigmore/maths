@@ -39,6 +39,9 @@
 (check-expect (table-of-mod-a-powers 7 327 853) (list 298 628 123 675 349 227 695 49 7))
 (check-expect (table-of-mod-a-powers 1 327 853) (list 1 1 1 1 1 1 1 1 1))
 (check-expect (table-of-mod-a-powers 0 327 853) (list 0 0 0 0 0 0 0 0 0))
+(check-expect (table-of-mod-a-powers 7 1 853) (list 7))
+(check-expect (table-of-mod-a-powers 7 2 853) (list 49 7))
+
 
 ;; laststep : [List Natural] x BinaryExpansion x Natural -> Natural
 ;; Given the table of succesive squares of a mod m, k's binary expansion, and
@@ -67,4 +70,70 @@
                      6847944682037444681162770672798288913849)) ;; prime
               1)
 ;; 1 milisecond
-;; is this real life
+
+;; extended : Natural x Natural -> (list Natural Natural)
+;; The exnteded euclidian algorithm
+;; finds x, y s.t. a*x+b*y=gcd(a,b)
+(define (extended a b)
+  (if (= b 0) (list 1 0)
+      (local ((define q (quotient a b))
+              (define r (remainder a b))
+              (define x (extended b r)))
+        (list (second x) (- (first x) (* q (second x)))))))
+(check-expect (extended 15 4) (list -1 4))
+(check-expect (extended 15 0) (list 1 0))
+
+
+;; gcd : Natural x Natural -> Natural
+(define (gcf a b)
+  (if (= b 0) a (gcf b (modulo a b))))
+(check-expect (gcf 15 7) 1)
+(check-expect (gcf 5 0) 5)
+(check-expect (gcf 10 15) 5)
+
+;; korselt : Natural -> Boolean
+;; Is this number a Carmichael number?
+(define (korselt n)
+  (local ((define (factor n)
+            (local ((define (f factors divisor n)
+                      (cond [(= n 1) factors]
+                            [(integer? (/ n divisor)) 
+                             (f (cons divisor factors) divisor (/ n divisor))]
+                            [else (f factors (add1 divisor) n)])))
+              (f empty 2 n)))
+          (define factors (factor n))
+          (define (square-free? factors)
+            (or (empty? (rest factors))
+                (and (not (= (first factors)
+                             (first (rest factors))))
+                     (square-free? (rest factors))))))
+    (and 
+     (odd? n)
+     (> (length factors) 1) 
+     (square-free? factors)
+     (andmap (λ (p) (integer? (/ (sub1 n) (sub1 p)))) factors))))
+(check-expect (korselt 3) false)
+(check-expect (korselt 62745) true)
+
+;; ranin-miller : Odds -> Boolean
+;; Is this number composite?
+(define (rabin-miller n)
+  (local ((define (2^k x)
+            (cond [(odd? x) 0]
+                  [else (add1 (2^k (/ x 2)))]))
+          (define k (2^k (sub1 n)))
+          (define q (/ (sub1 n) (expt 2 k)))
+          (define amax 100)
+          (define (a-generators a as)
+            (cond [(= (length as) amax) (reverse as)]
+                  [(not (integer? (/ a n))) (a-generators (add1 a) (cons a as))]
+                  [else (a-generators (add1 a) as)]))
+          (define as (a-generators 2 empty)))
+    (ormap (λ (a)
+     (and (not (= 1 (succesive-squaring a q n)))
+         (andmap (λ (i) (not (= (- n 1) (succesive-squaring a (* (expt 2 i) q) n))))
+                 (build-list k identity)))) as)))
+(check-expect (rabin-miller 25) true)
+(check-expect (rabin-miller (* 3 5 7 11)) true)
+(check-expect (rabin-miller 234723489) true)
+(check-expect (rabin-miller 101) false)
