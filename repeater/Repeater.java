@@ -5,7 +5,7 @@
  * @param <X>
  */
 @SuppressWarnings("rawtypes")
-public abstract class Repeater{
+public abstract class Repeater implements Function<Function>{
     /** @return a function repeated */
     public abstract <X> Function<X> repeat(final Function<X> f);
     /** @return how many times this repeater repeats */
