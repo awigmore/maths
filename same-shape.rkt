@@ -10,6 +10,13 @@
 ;; Two graphs have the same shape if, after removing all node names,
 ;; one can rearrange the nodes (without altering which edges connect 
 ;; to which node) and get back the same picture.
+;; One could try every permutation swapping the node names from the first
+;; with the second, but that's guaranteed factorial time.
+;; The algorithm used here only alters corresponding nodes with the same
+;; amount of vertices, which, in worst case, is factorial (two graphs
+;; with 20 nodes that each connection to 7 nodes, for example),
+;; but a graph with 20 nodes, 18 of which connect to 0, 1, 2... 17 nodes,
+;; and two of which connect to 20, will execute very quickly.
 
 ;; Document structure:
 ;; Data Definitions
