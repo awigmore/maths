@@ -110,13 +110,13 @@
 (check-expect (rem 5 '(6 5 10) =) '(6 10))
 (check-expect (rem 5 '(6 7 8) =) false)
 
-;; reverse-ref : [List X] x X x [Equality X] -> Natural
+;; inverse-ref : [List X] x X x [Equality X] -> Natural
 ;; The location of the element in the list
-(define (reverse-ref lox x equals?)
+(define (inverse-ref lox x equals?)
   (if (empty? lox) (error "not here")
-      (if (equals? x (first lox)) 0 (add1 (reverse-ref (rest lox) x equals?)))))
-(check-expect (reverse-ref '(0 1 2 3) 2 =) 2)
-(check-error (reverse-ref empty 2 =) "not here")
+      (if (equals? x (first lox)) 0 (add1 (inverse-ref (rest lox) x equals?)))))
+(check-expect (inverse-ref '(0 1 2 3) 2 =) 2)
+(check-error (inverse-ref empty 2 =) "not here")
 
 ;; pair=? : [Equality X] x [Equality Y] -> [Equality [Pair X Y]]
 (define (pair=? x-equals? y-equals?) 
@@ -410,12 +410,12 @@
   (local ((define p=? (graph-node=? ssg1)))
     (make-graph (graph-nodes ssg1)
                 (λ (newnodename) 
-                  (local ((define oldlocation (reverse-ref (graph-nodes ssg1) newnodename p=?))
+                  (local ((define oldlocation (inverse-ref (graph-nodes ssg1) newnodename p=?))
                           (define oldnode (list-ref (graph-nodes ssg2) oldlocation))
                           (define oldneighbors ((graph-neighbors ssg2) oldnode))
                           (define (oldnode->newnode oldnode)
                             (list-ref (graph-nodes ssg1) 
-                                      (reverse-ref (graph-nodes ssg2) oldnode p=?))))
+                                      (inverse-ref (graph-nodes ssg2) oldnode p=?))))
                     (map oldnode->newnode oldneighbors)))
                 p=?)))
 (define SSG2 (make-graph '((a 2) (b 0) (c 0)) 
@@ -461,7 +461,7 @@
                 (λ (node) (map s-map 
                                ((graph-neighbors g) 
                                 (list-ref (graph-nodes g)
-                                          (reverse-ref x node (graph-node=? g))))))
+                                          (inverse-ref x node (graph-node=? g))))))
                 (graph-node=? g))))
 (define SYMBOLAPPEND1 (λ (sym) (string->symbol (string-append "1" (symbol->string sym)))))
 (check-expect (SYMBOLAPPEND1 'A) '1A)
@@ -488,7 +488,7 @@
 ;; where every node is now named by its place
 ;; in the original graph's list
 (define (natural-graph g)
-  (local ((define x->nat (λ (x) (reverse-ref (graph-nodes g) x (graph-node=? g)))))
+  (local ((define x->nat (λ (x) (inverse-ref (graph-nodes g) x (graph-node=? g)))))
     (make-graph (build-list (length (graph-nodes g)) identity) 
                 (λ (n) (map x->nat ((graph-neighbors g) (list-ref (graph-nodes g) n))))
                 =))) 
@@ -617,4 +617,17 @@
                                       [(f "e") '("e")]
                                       [(f "f") '("a")]
                                       [(f "g") '("d" "a" "b")]))) string=?)) false)
+;; Checks for equivalence relation
 (check-expect (same-shape? SSG2 SSG3) true)
+(check-expect (same-shape? SSG3 SSG2) true)
+(check-expect (same-shape? SSG2 SSG2) true)
+(check-expect (same-shape? SSG3 SSG3) true)
+(check-expect (same-shape? G1 G1) true)
+(check-expect (same-shape? SG1 G1) true)
+(check-expect (same-shape? G1 SG1) true)
+(check-expect (same-shape? SG1 SG1) true)
+(check-expect (same-shape? SSG1 SG1) true)
+(check-expect (same-shape? SG1 SSG1) true)
+(check-expect (same-shape? SSG1 SSG1) true)
+(check-expect (same-shape? G1 SSG1) true)
+(check-expect (same-shape? SSG1 G1) true)
