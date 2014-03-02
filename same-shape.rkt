@@ -1,7 +1,7 @@
 ;; The first three lines of this file were inserted by DrRacket. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname same-shape) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t quasiquote repeating-decimal #f #t none #f ())))
-;; Data definition for a graph and saome graph examples and same-graph? tests
+;; Data definition for a graph, G1, and some same-graph? tests
 ;; come from http://www.ccs.neu.edu/course/csu211/Assignments/10h.html
 ;; Written in Intermediate Student with lambda
 ;; By Matthew Singer
