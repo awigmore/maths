@@ -64,7 +64,7 @@
 ;;   for (int j = 0; j < 3; j++)
 ;;     for (int k = 0; k < 2; k++)
 ;; '(1 2 0) would represent the moment in the for loop
-;; where i = 1, j = 2, and k = 3
+;; where i = 1, j = 2, and k = 0
 
 ;; A [Pair X Y] is a (list X Y)
 
