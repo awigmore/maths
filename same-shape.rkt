@@ -35,7 +35,10 @@
 ; /---/  `.__/|  \__/ `.__/|      /---/  `.___, |    / /    | /  \__/ /  `._.' /    | \___.'
 
 (define-struct graph (nodes neighbors node=?))
-;; A [Graph X] is a (make-graph [List X] [X -> [List X]] [X X -> Boolean])
+;; An [Equality X] is a [X X -> Boolean]
+;; That tests for some form of equality 
+
+;; A [Graph X] is a (make-graph [List X] [X -> [List X]] [Equality X])
 ;; Invariant: For all nodes n a graph g,
 ;; (member n (remove n (graph-nodes g))) = false
 ;; (i.e. all node names are distinct)
@@ -78,13 +81,13 @@
 ; |     |  `--.   |         |     |   | |    | |       |    | |    | |    |  `--. 
 ; /---/ / \___.'  \__/      /     `._/| /    |  `._.'  \__/ /  `._.' /    | \___.'
 
-;; list=? : [List X] x [List X] x [X X -> Boolean] -> Boolean
+;; list=? : [List X] x [List X] x [Equality X] -> Boolean
 ;; Are the two lists the same? (order does not matter)
-(define (list=? l1 l2 c)
+(define (list=? l1 l2 equals?)
   (or (and (empty? l1) (empty? l2))
       (and (cons? l1) (cons? l2)
-           (local ((define x (rem (first l1) l2 c)))
-             (and (not (false? x)) (list=? (rest l1) x c))))))
+           (local ((define x (rem (first l1) l2 equals?)))
+             (and (not (false? x)) (list=? (rest l1) x equals?))))))
 (check-expect (list=? empty empty =) true)
 (check-expect (list=? empty '(5) =) false)
 (check-expect (list=? '(5) empty =) false)
@@ -92,21 +95,21 @@
 (check-expect (list=? '(5 6 7 8 9 10) '(10 9 8 7 6 5) =) true)
 (check-expect (list=? '(5 6 6 7 8 9 7 10) '(10 7 6 9 8 7 6 5) =) true)
 
-;; rem : X x [List X] x [X X -> Boolean] -> [Maybe [List X]]
+;; rem : X x [List X] x [Equality X] -> [Maybe [List X]]
 ;; Removes an element from the list, or returns false
 ;; if it isn't there
 ;; Written to increase speed of list=?
-(define (rem x lox c)
+(define (rem x lox equals?)
   (if (empty? lox) false 
-      (if (c x (first lox)) (rest lox)
-          (local ((define y (rem x (rest lox) c)))
+      (if (equals? x (first lox)) (rest lox)
+          (local ((define y (rem x (rest lox) equals?)))
             (if (false? y) y (cons (first lox) y))))))
 (check-expect (rem 5 empty =) false)
 (check-expect (rem 5 '(5) =) empty)
 (check-expect (rem 5 '(6 5 10) =) '(6 10))
 (check-expect (rem 5 '(6 7 8) =) false)
 
-;; reverse-ref : [List X] x X x [X X -> Boolean] -> Natural
+;; reverse-ref : [List X] x X x [Equality X] -> Natural
 ;; The location of the element in the list
 (define (reverse-ref lox x equals?)
   (if (empty? lox) (error "not here")
@@ -114,7 +117,7 @@
 (check-expect (reverse-ref '(0 1 2 3) 2 =) 2)
 (check-error (reverse-ref empty 2 =) "not here")
 
-;; pair=? : [X X -> Boolean] x [Y Y -> Boolean] -> [[Pair X Y] x [Pair X Y]  -> Boolean]
+;; pair=? : [Equality X] x [Equality Y] -> [Equality [Pair X Y]]
 (define (pair=? x-equals? y-equals?) 
   (λ (p1 p2) 
     (and (x-equals? (first p1) (first p2))
@@ -123,7 +126,7 @@
 (check-expect ((pair=? symbol=? =)'(a 1) '(a 2)) false)
 (check-expect ((pair=? symbol=? =)'(c 1) '(a 1)) false)
 
-;; simple-map : [List X] x [List X] x [X X -> Boolean] -> [X -> X]
+;; simple-map : [List X] x [List X] x [Equality X] -> [X -> X]
 ;; A simple map from corresponding elemnts in x1 to x2
 ;; (length x1) = (length x2)
 (define (simple-map x1 x2 equals?)
@@ -179,7 +182,7 @@
 (check-expect (kth-perm '(1 2 3) 4) '(3 1 2))
 (check-expect (kth-perm '(1 2 3) 5) '(3 2 1))
 
-;; choice-maker : Nat x [List Positive] -> [List Nat]
+;; choice-maker : Nat x [List Positive] -> Choice
 ;; x is a list of numbers representing how many
 ;; options can be chosen for each choice
 ;; n is which number choice you wish to make
@@ -314,7 +317,7 @@
 ; |    _  |   ' |    | |    | |'   `      |     |   | |    | |       |    | |    | |    |  `--. 
 ;  `.___| /     `.__/| |`---' /    |      /     `._/| /    |  `._.'  \__/ /  `._.' /    | \___.'
 ;                      \                                                                        
-;; same-graph? : [Graph X] x [Graph X] -> Boolean
+;; same-graph? : [Equality [Graph X]]
 ;; Are the two graphs the same?
 (define (same-graph? g1 g2)
   (local ((define listx=? (λ (x y) (list=? x y (graph-node=? g1))))
