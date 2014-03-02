@@ -419,12 +419,11 @@
                                 (list-ref (graph-nodes g)
                                           (inverse-ref x node (graph-node=? g))))))
                 (graph-node=? g))))
-(define SYMBOLAPPEND1 (λ (sym) (string->symbol (string-append "1" (symbol->string sym)))))
-(check-expect (SYMBOLAPPEND1 'A) '1A)
-(check-expect (graph-nodes (change-names G1 (map SYMBOLAPPEND1 (graph-nodes G1))))
-              '(1A 1B 1C 1D 1E 1F 1G))
-(check-expect ((graph-neighbors (change-names G1 (map SYMBOLAPPEND1 (graph-nodes G1)))) '1A)
-              '(1B 1E))
+(define g1 (change-names G1 '(a b c d e f g)))
+(check-expect (graph-nodes g1)
+              '(a b c d e f g))
+(check-expect ((graph-neighbors g1) 'a)
+              '(b e))
 
 ;; swap-names : [Graph X] x [Graph X] -> [Graph X]
 ;; Swap all names in the second graph with the names in the first graph
@@ -568,6 +567,7 @@
                                            [(= node 3) '(1 2)]
                                            [(= node 1) '(1 3)]
                                            [(= node 2) '(1)])) =)) false)
+(check-expect (same-shape? g1 G1) true)
 (check-expect (same-shape? (make-graph '(a b c d e f g)
                                        (λ (node)
                                          (local ((define (f sym)
