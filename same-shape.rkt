@@ -133,7 +133,7 @@
 (check-expect ((pair=? symbol=? =)'(c 1) '(a 1)) false)
 
 ;; simple-map : [List X] x [List X] x [Equality X] -> [X -> X]
-;; A simple map from corresponding elemnts in x1 to x2
+;; A simple map from corresponding elements in x1 to x2
 ;; (length x1) = (length x2)
 (define (simple-map x1 x2 equals?)
   (λ (x)
@@ -178,8 +178,7 @@
 (define (kth-perm x k) 
   (if (empty? x) x 
       (local ((define x-1! (! (sub1 (length x))))
-              (define i (quotient k x-1!))
-              (define element (list-ref x i)))
+              (define element (list-ref x (quotient k x-1!))))
         (cons element (kth-perm (remove element x) (modulo k x-1!))))))
 (check-expect (kth-perm '() 0) empty)
 (check-expect (kth-perm '(1) 0) '(1))
@@ -205,13 +204,8 @@
 (check-expect (choice-maker 0 '(1)) '(0))
 (check-expect (choice-maker 0 '(1 2)) '(0 0))
 (check-expect (choice-maker 1 '(1 2)) '(0 1))
-(check-expect (equal? (build-list (apply * '(2 1 3)) (λ (n) (choice-maker n '(2 1 3))))
-                      '((0 0 0)
-                        (0 0 1)
-                        (0 0 2)
-                        (1 0 0)
-                        (1 0 1)
-                        (1 0 2))) true)
+(check-expect (build-list (apply * '(2 1 3)) (λ (n) (choice-maker n '(2 1 3))))
+              '((0 0 0) (0 0 1) (0 0 2) (1 0 0) (1 0 1) (1 0 2)))
 
 ;; first-n : [List X] x Nat -> [List X]
 ;; first-n elements of a list
