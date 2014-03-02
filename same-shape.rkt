@@ -463,7 +463,7 @@
 ;; (length (graph-nodes g)) = (length x)
 (define (change-names g x)
   (local ((define s-map (simple-map (graph-nodes g) x (graph-node=? g))))
-    (make-graph (map s-map (graph-nodes g))
+    (make-graph x
                 (λ (node) (map s-map 
                                ((graph-neighbors g) 
                                 (list-ref (graph-nodes g)
