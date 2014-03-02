@@ -27,13 +27,16 @@
 ;; Graph Functions (helpers)
 ;; same-shape? (the final result and many tests)
 
-;; To easily find one section, View -> Show Program Contour (or command+U/ctrl+U)
+;; To easily find one section, View -> Show Program Contour (or command+u/ctrl+u)
+;; or command+f/ctrl+f
 
 ; .___           .                .___          ,__              .                          
 ; /   `    ___  _/_     ___       /   `    ___  /  ` ` , __   ` _/_   `   __.  , __     ____
 ; |    |  /   `  |     /   `      |    | .'   ` |__  | |'  `. |  |    | .'   \ |'  `.  (    
 ; |    | |    |  |    |    |      |    | |----' |    | |    | |  |    | |    | |    |  `--. 
 ; /---/  `.__/|  \__/ `.__/|      /---/  `.___, |    / /    | /  \__/ /  `._.' /    | \___.'
+
+;; Data Definitions 
 
 (define-struct graph (nodes neighbors node=?))
 ;; An [Equality X] is a [X X -> Boolean]
@@ -81,6 +84,8 @@
 ; |     |  (      |         |__.  |   | |'  `. .'   `  |    | .'   \ |'  `.  (    
 ; |     |  `--.   |         |     |   | |    | |       |    | |    | |    |  `--. 
 ; /---/ / \___.'  \__/      /     `._/| /    |  `._.'  \__/ /  `._.' /    | \___.'
+
+;; List Functions
 
 ;; list=? : [List X] x [List X] x [Equality X] -> Boolean
 ;; Are the two lists the same? (order does not matter)
@@ -150,6 +155,8 @@
 ;  /   ` |'  `.  /   |      |__.   /   ` .'   `  |    .'   \ /   \ |  /   `  |  
 ; |    | |    | ,'   |      |     |    | |       |    |    | |   ' | |    |  |  
 ; `.__/| /    | `___,'      /     `.__/|  `._.'  \__/  `._.' /     / `.__/| /\__
+
+;; Bin, Choice, and Factorial
 
 ;; ! : Natural -> Positive
 ;; x!
@@ -262,6 +269,8 @@
 ; |       /\   |    | |   |   | |    |  |   |----'  `--. 
 ; /----/ /  \  `.__/| /   '   / |`---' /\__ `.___, \___.'
 
+;; Examples
+
 ;; G1 is a [Graph Symbol]
 (define G1
   (make-graph '(A B C D E F G)
@@ -318,6 +327,9 @@
 ; |    _  |   ' |    | |    | |'   `      |     |   | |    | |       |    | |    | |    |  `--. 
 ;  `.___| /     `.__/| |`---' /    |      /     `._/| /    |  `._.'  \__/ /  `._.' /    | \___.'
 ;                      \                                                                        
+
+;; Graph Functions
+
 ;; same-graph? : [Equality [Graph X]]
 ;; Are the two graphs the same?
 (define (same-graph? g1 g2)
@@ -526,9 +538,11 @@
 ;  (      /   ` |' `|' `. .'   ` .---'  (     |,---.  /   ` |    \ .'   ` `   '
 ;  `--.  |    | |   |   | |----'        `--.  |'   ` |    | |    | |----'    / 
 ; \___.' `.__/| /   '   / `.___,       \___.' /    | `.__/| |`---' `.___,   ,  
-;                                                           \               '  
+;                                                           \               ' 
 
-;; same-shape-helper? :  [Sorted-Size-Graph Natural] x  [Sorted-Size-Graph Natural] -> Boolean
+;; same-shape?
+
+;; same-shape-helper? : [Equality [Sorted-Size-Graph Natural]]
 ;; Are the graphs of the same shape
 (define (same-shape-helper g1 g2)
   (local ((define (loop n)
