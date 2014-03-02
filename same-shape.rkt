@@ -38,10 +38,10 @@
 
 ;; Data Definitions 
 
-(define-struct graph (nodes neighbors node=?))
 ;; An [Equality X] is a [X X -> Boolean]
 ;; That tests for some form of equality 
 
+(define-struct graph (nodes neighbors node=?))
 ;; A [Graph X] is a (make-graph [List X] [X -> [List X]] [Equality X])
 ;; Invariant: For all nodes n a graph g,
 ;; (member n (remove n (graph-nodes g))) = false
