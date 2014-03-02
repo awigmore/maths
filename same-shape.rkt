@@ -408,22 +408,29 @@
 (check-expect (apply >= (map second (graph-nodes (sort-size-graph SG1)))) true)
 (check-expect (graph-nodes (sort-size-graph SG1)) (graph-nodes SSG1))
 
-;; swap-names : [Sorted-Size-Graph X] x [Sorted-Size-Graph X] -> [Sorted-Size-Graph X]
+;; change-names : [Graph X] [List X] -> [Graph X]
+;; Change the names of vertices within a graph
+;; (length (graph-nodes g)) = (length x)
+(define (change-names g x)
+  (local ((define s-map (simple-map (graph-nodes g) x (graph-node=? g))))
+    (make-graph x
+                (λ (node) (map s-map 
+                               ((graph-neighbors g) 
+                                (list-ref (graph-nodes g)
+                                          (inverse-ref x node (graph-node=? g))))))
+                (graph-node=? g))))
+(define SYMBOLAPPEND1 (λ (sym) (string->symbol (string-append "1" (symbol->string sym)))))
+(check-expect (SYMBOLAPPEND1 'A) '1A)
+(check-expect (graph-nodes (change-names G1 (map SYMBOLAPPEND1 (graph-nodes G1))))
+              '(1A 1B 1C 1D 1E 1F 1G))
+(check-expect ((graph-neighbors (change-names G1 (map SYMBOLAPPEND1 (graph-nodes G1)))) '1A)
+              '(1B 1E))
+
+;; swap-names : [Graph X] x [Graph X] -> [Graph X]
 ;; Swap all names in the second graph with the names in the first graph
-;; in order (note: graphs must be of the same size and each corresponding node
-;; must have the same number of connections)
+;; in order (note: graphs must be of the same size)
 (define (swap-names ssg1 ssg2)
-  (local ((define p=? (graph-node=? ssg1)))
-    (make-graph (graph-nodes ssg1)
-                (λ (newnodename) 
-                  (local ((define oldlocation (inverse-ref (graph-nodes ssg1) newnodename p=?))
-                          (define oldnode (list-ref (graph-nodes ssg2) oldlocation))
-                          (define oldneighbors ((graph-neighbors ssg2) oldnode))
-                          (define (oldnode->newnode oldnode)
-                            (list-ref (graph-nodes ssg1) 
-                                      (inverse-ref (graph-nodes ssg2) oldnode p=?))))
-                    (map oldnode->newnode oldneighbors)))
-                p=?)))
+  (change-names ssg2 (graph-nodes ssg1)))
 (define SSG2 (make-graph '((a 2) (b 0) (c 0)) 
                          (λ (node) (if ((pair=? symbol=? =) node '(a 2)) '((a 2) (b 0)) '())) 
                          (pair=? symbol=? =)))
@@ -457,24 +464,6 @@
 (check-expect (bin-ssg SSG1) '(1 3 1 2))
 (check-expect (bin-ssg SSG2) '(1 2))
 (check-expect (bin-ssg SSG2) (bin-ssg SSG3))
-
-;; change-names : [Graph X] [List X] -> [Graph X]
-;; Change the names of vertices within a graph
-;; (length (graph-nodes g)) = (length x)
-(define (change-names g x)
-  (local ((define s-map (simple-map (graph-nodes g) x (graph-node=? g))))
-    (make-graph x
-                (λ (node) (map s-map 
-                               ((graph-neighbors g) 
-                                (list-ref (graph-nodes g)
-                                          (inverse-ref x node (graph-node=? g))))))
-                (graph-node=? g))))
-(define SYMBOLAPPEND1 (λ (sym) (string->symbol (string-append "1" (symbol->string sym)))))
-(check-expect (SYMBOLAPPEND1 'A) '1A)
-(check-expect (graph-nodes (change-names G1 (map SYMBOLAPPEND1 (graph-nodes G1))))
-              '(1A 1B 1C 1D 1E 1F 1G))
-(check-expect ((graph-neighbors (change-names G1 (map SYMBOLAPPEND1 (graph-nodes G1)))) '1A)
-              '(1B 1E))
 
 ;; change-ssg : [Sorted-Size-Graph X] x Natural -> [Sorted-Size-Graph X]
 ;; The nth refactoring of the ssg
