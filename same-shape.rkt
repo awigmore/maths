@@ -23,6 +23,7 @@
 ;; Data Definitions
 ;; List Functions (helpers)
 ;; Bin and Choice (helpers - explained in data definitions)
+;; Hash (helpers)
 ;; Examples (of graphs-related data definitions)
 ;; Graph Functions (helpers)
 ;; same-shape? (the final result and many tests)
@@ -52,13 +53,15 @@
 ;; (member n (remove n (graph-nodes g))) = false
 ;; (i.e. all node names are distinct)
 
-;; A [Size-Graph X] is a [Graph (list X Natural)]
+;; A [Connection-Graph X] is a [Graph (list X Natural)]
 ;; Where the number in the pair of the node is
-;; how many neighbors the node has
+;; based off of the connections the node has
+;; (currently, a hash of the lengths of its neighbors
+;; connections)
 
-;; A [Sorted-Size-Graph X] is a [Size-Graph x]
+;; A [Sorted-Connection-Graph X] is a [Connection-Graph x]
 ;; where the list of nodes is sorted in descending
-;; order based on how many neighbors it has
+;; order based on the node's number
 ;; Note: A sorted size graph represents the same
 ;; graph as its unsorted version, but the sorting
 ;; of nodes can be (and is) used for computation
@@ -259,6 +262,65 @@
                 (5 supes) (3 supes) (4 supes)
                 (6 wonderwoman)))
 
+; __  __               _     
+; |   |    ___    ____ /     
+; |___|   /   `  (     |,---.
+; |   |  |    |  `--.  |'   `
+; /   /  `.__/| \___.' /    |
+
+;; Hash
+
+;; all-unique : [List X] x [Equality X] -> Boolean
+;; Checks to see all members are unique
+(define (all-unique x equals?)
+  (or (empty? x) 
+      (and (false? (rem (first x) (rest x) equals?))
+           (all-unique (rest x) equals?))))
+(check-expect (all-unique empty =) true)
+(check-expect (all-unique '(1 2 3 4 5 6 7 8 9 10) =) true)
+(check-expect (all-unique '(1 2 3 4 5 1 7 8 9 10) =) false)
+;; pairing-function : Nat x Nat -> Positive
+;; A hash for two nats
+(define (pairing-function x y)
+  (+ (add1 y) (* .5 (+ x (add1 y)) (+ 1 x (add1 y)))))
+(check-expect (all-unique 
+               (build-list 9 
+                           (λ (n) (local ((define y (choice-maker n '(3 3))))
+                                    (pairing-function (first y) (second y))))) =)
+              true)
+
+;; hash-nats : [List Nat] -> Integer
+;; hash a list of nats
+(define (hash-nats x)
+  (local ((define (pair-off x)
+            (if (or (empty? x) (empty? (rest x))) x
+                (cons (pairing-function (first x) (second x)) (pair-off (rest (rest x))))))
+          (define (hash-nats x)
+            (cond 
+              [(empty? x) 0]
+              [(empty? (rest x)) (first x)]
+              [(empty? (rest (rest x))) (pairing-function (first x) (second x))]
+              [else (hash-nats (pair-off x))])))
+    (pairing-function (length x) (hash-nats x))))
+
+;; all-unique-test : Natural -> Boolean
+;; Makes sure hash-nats generates unique values
+;; for all lists of size [0, n] 
+;; with values from [0, n)
+(define (all-unique-test n)
+  (all-unique
+   (apply append
+          (build-list (add1 n)
+                      (λ (power)
+                        (build-list
+                         (expt n power)
+                         (λ (x)
+                           (hash-nats
+                            (choice-maker x (make-list power n))))))))
+   =))
+(check-expect (all-unique-test 4) true)
+                            
+
 
 
 ; .____                                 .                
@@ -283,41 +345,34 @@
               symbol=?))
 (check-expect ((graph-neighbors G1) 'A) '(B E))
 (check-expect ((graph-neighbors G1) 'G) '())
-;; SG1 is a [Size-Graph Symbol] and represents
-;; the size-graph version of G1
-(define SG1 (local ((define equals? (pair=? symbol=? =)))
+;; SG1 is a [Connection-Graph Symbol] and represents
+;; the connection-graph version of G1
+(define CG1 (local ((define equals? (pair=? symbol=? =)))
               (make-graph 
-               (map list '(A B C D E F G) '(2 2 1 0 3 2 0))
+               (map list '(A B C D E F G) '(403 403 4 2 23649 18 2))
                (lambda (n)
-                 (cond [(equals? n '(A 2)) '((B 2) (E 3))]
-                       [(equals? n '(B 2)) '((E 3) (F 2))]
-                       [(equals? n '(C 1)) '((D 0))]
-                       [(equals? n '(D 0)) '()]
-                       [(equals? n '(E 3)) '((C 1) (F 2) (A 2))]
-                       [(equals? n '(F 2)) '((D 0) (G 0))]
-                       [(equals? n '(G 0)) '()]))
+                 (cond [(equals? n '(A 403)) '((B 403) (E 23649))]
+                       [(equals? n '(B 403)) '((E 23649) (F 18))]
+                       [(equals? n '(C 4)) '((D 2))]
+                       [(equals? n '(D 2)) '()]
+                       [(equals? n '(E 23649)) '((C 4) (F 18) (A 403))]
+                       [(equals? n '(F 18)) '((D 2) (G 2))]
+                       [(equals? n '(G 2)) '()]))
                equals?)))
-(check-expect ((graph-neighbors SG1) '(A 2)) '((B 2) (E 3)))
-(check-expect ((graph-neighbors SG1) '(G 0)) '())
+(check-expect ((graph-neighbors CG1) '(A 403)) '((B 403) (E 23649)))
+(check-expect ((graph-neighbors CG1) '(G 2)) '())
 
 
 
-;; SSG1 is a [Sorted-Size-Graph Symbol] and is
-;; the sorted-size-graph version of SG1
-(define SSG1 (local ((define equals? (pair=? symbol=? =)))
+;; SSG1 is a [Sorted-Connection-Graph Symbol] and is
+;; the sorted-connection-graph version of CG1
+(define SCG1 (local ((define equals? (pair=? symbol=? =)))
                (make-graph 
-                '((E 3) (A 2) (B 2) (F 2) (C 1) (D 0) (G 0))
-                (lambda (n)
-                  (cond [(equals? n '(A 2)) '((B 2) (E 3))]
-                        [(equals? n '(B 2)) '((E 3) (F 2))]
-                        [(equals? n '(C 1)) '((D 0))]
-                        [(equals? n '(D 0)) '()]
-                        [(equals? n '(E 3)) '((C 1) (F 2) (A 2))]
-                        [(equals? n '(F 2)) '((D 0) (G 0))]
-                        [(equals? n '(G 0)) '()]))
+                '((E 23649) (A 403) (B 403) (F 18) (C 4) (D 2)  (G 2))
+                (graph-neighbors CG1)
                 equals?)))
-(check-expect ((graph-neighbors SSG1) '(A 2)) '((B 2) (E 3)))
-(check-expect ((graph-neighbors SSG1) '(G 0)) '())
+(check-expect ((graph-neighbors SCG1) '(A 403)) '((B 403) (E 23649)))
+(check-expect ((graph-neighbors SCG1) '(G 2)) '())
 
 ;   ___                       _       
 ; .'   \  .___    ___  \,___, /       
@@ -376,25 +431,28 @@
                                            [(symbol=? x 'a) '(b a)] 
                                            [(symbol=? x 'b) '()]))
                                        symbol=?)) true)
-(check-expect (same-graph? SG1 SSG1) true)
+(check-expect (same-graph? CG1 SCG1) true)
 
-;; neighbor-size : [Graph X] x X -> Natural
-;; How many neighbors a single node has
-(define (neighbor-size g x)
-  (length ((graph-neighbors g) x)))
-(check-expect (neighbor-size G1 'A) 2)
+;; hash-node : [Graph X] x X -> Natural
+;; The connection hash for an individual node
+(define (hash-node g x)
+  (hash-nats (sort (map (λ (node)
+                          (length ((graph-neighbors g) node))) 
+                        ((graph-neighbors g) x)) 
+                   >)))
+(check-expect (hash-node G1 'A) (hash-nats (list 3 2)))
 
-;; neighbor-size-list : [Graph X] -> [List Natural]
-;; A list of how many neighbors each node has
-(define (neighbor-size-list g)
-  (map (λ (x) (neighbor-size g x)) (graph-nodes g)))
-(check-expect (neighbor-size-list (make-graph '(a) (λ (n) empty) symbol=?)) '(0))
-(check-expect (neighbor-size-list G1) '(2 2 1 0 3 2 0))
+;; hash-list : [Graph X] -> [List Natural]
+;; A list of the hashes of the nodes
+(define (hash-list g)
+  (map (λ (x) (hash-node g x)) (graph-nodes g)))
+(check-expect (hash-list (make-graph '(a) (λ (n) empty) symbol=?)) '(2))
+(check-expect (hash-list G1) '(403 403 4 2 23649 18 2))
 
-;; size-graph : [Graph X] -> [Size-Graph X]
-;; Every node becomes its named paired with its neighbor size
-(define (size-graph g)
-  (local ((define newnodes (map list (graph-nodes g) (neighbor-size-list g)))
+;; connection-graph : [Graph X] -> [Connection-Graph X]
+;; Every node becomes its named paired with its connection hash
+(define (connection-graph g)
+  (local ((define newnodes (map list (graph-nodes g) (hash-list g)))
           (define (lookup oldnode newnodes)
             (if (empty? newnodes) (error "oldnode not found in newnodes")
                 (if ((graph-node=? g) oldnode (first (first newnodes))) (first newnodes)
@@ -404,18 +462,19 @@
                   (map (λ (oldnode) (lookup oldnode newnodes)) 
                        ((graph-neighbors g) (first newnode))))
                 (pair=? (graph-node=? g) =))))
-(check-expect (same-graph? (size-graph G1) SG1) true)
+(check-expect (same-graph? (connection-graph G1) CG1) true)
 
-;; sort-size-graph : [Size-Graph X] -> [Sorted-Size-Graph X]
-;; Sorts a size graph in descending order by size of nodes
-(define (sort-size-graph g)
+;; sort-connection-graph : [Connection-Graph X] -> [Sorted-Connection-Graph X]
+;; Sorts a connection graph in descending order by the node's number
+(define (sort-connection-graph g)
   (make-graph (sort (graph-nodes g)
                     (λ (p1 p2) (> (second p1) (second p2))) )
               (graph-neighbors g) (graph-node=? g)))
-(check-expect (same-graph? (sort-size-graph SG1)
-                           SSG1) true)
-(check-expect (apply >= (map second (graph-nodes (sort-size-graph SG1)))) true)
-(check-expect (graph-nodes (sort-size-graph SG1)) (graph-nodes SSG1))
+(check-expect (same-graph? (sort-connection-graph CG1)
+                           SCG1) true)
+(check-expect (same-graph? CG1 SCG1) true)
+(check-expect (apply >= (map second (graph-nodes (sort-connection-graph CG1)))) true)
+(check-expect (graph-nodes (sort-connection-graph CG1)) (graph-nodes SCG1))
 
 ;; change-names : [Graph X] [List X] -> [Graph X]
 ;; Change the names of vertices within a graph
@@ -439,14 +498,14 @@
 ;; in order (note: graphs must be of the same size)
 (define (swap-names ssg1 ssg2)
   (change-names ssg2 (graph-nodes ssg1)))
-(define SSG2 (make-graph '((a 2) (b 0) (c 0)) 
+(define SCG2 (make-graph '((a 2) (b 0) (c 0)) 
                          (λ (node) (if ((pair=? symbol=? =) node '(a 2)) '((a 2) (b 0)) '())) 
                          (pair=? symbol=? =)))
-(define SSG3 (make-graph '((d 2) (e 0) (f 0)) 
+(define SCG3 (make-graph '((d 2) (e 0) (f 0)) 
                          (λ (node) (if ((pair=? symbol=? =) node '(d 2)) '((d 2) (f 0)) '())) 
                          (pair=? symbol=? =)))
-(check-expect ((graph-neighbors (swap-names SSG2 SSG3)) '(a 2)) '((a 2) (c 0)))
-(check-expect (same-graph?  (swap-names SSG2 SSG3) SSG2) false)
+(check-expect ((graph-neighbors (swap-names SCG2 SCG3)) '(a 2)) '((a 2) (c 0)))
+(check-expect (same-graph?  (swap-names SCG2 SCG3) SCG2) false)
 
 ;; bin-pair : [List (list X Natural)] -> Bin
 ;; Output how many times the second number occurs in a sorted list of pairs
@@ -465,26 +524,26 @@
     (map second (bin-helper x))))
 ;; 2 appears 4 times, 0 appears once
 (check-expect (bin-pair '((a 2) (b 2) (c 2) (c 2) (d 0))) '(4 1))
-;; bin-ssg : [Sorted-Size-Graph X] -> Bin
-;; bins an ssg
-(define (bin-ssg ssg)
-  (bin-pair (graph-nodes ssg)))
-(check-expect (bin-ssg SSG1) '(1 3 1 2))
-(check-expect (bin-ssg SSG2) '(1 2))
-(check-expect (bin-ssg SSG2) (bin-ssg SSG3))
+;; bin-scg : [Sorted-Connection-Graph X] -> Bin
+;; bins an scg
+(define (bin-scg scg)
+  (bin-pair (graph-nodes scg)))
+(check-expect (bin-scg SCG1) '(1 2 1 1 2))
+(check-expect (bin-scg SCG2) '(1 2))
+(check-expect (bin-scg SCG2) (bin-scg SCG3))
 
-;; change-ssg : [Sorted-Size-Graph X] x Natural -> [Sorted-Size-Graph X]
-;; The nth refactoring of the ssg
-(define (change-ssg ssg n)
-  (change-names ssg (bin-swap (graph-nodes ssg) (bin-ssg ssg) n)))
-(check-expect (graph-nodes (change-ssg SSG2 1)) (list (list 'a 2) (list 'c 0) (list 'b 0)))
+;; change-scg : [Sorted-Connection-Graph X] x Natural -> [Sorted-Connection-Graph X]
+;; The nth refactoring of the scg
+(define (change-scg scg n)
+  (change-names scg (bin-swap (graph-nodes scg) (bin-scg scg) n)))
+(check-expect (graph-nodes (change-scg SCG2 1)) (list (list 'a 2) (list 'c 0) (list 'b 0)))
 
-;; perm-count : [Sorted-Size-Graph X] -> Natural
+;; perm-count : [Sorted-Connection-Graph X] -> Natural
 ;; How many permutations will need to be made?
-(define (perm-count ssg)
-  (foldl (λ (bin-num product) (* (! bin-num) product)) 1 (bin-ssg ssg)))
-(check-expect (perm-count SSG2) 2)
-(check-expect (perm-count SSG1) 12)
+(define (perm-count scg)
+  (foldl (λ (bin-num product) (* (! bin-num) product)) 1 (bin-scg scg)))
+(check-expect (perm-count SCG2) 2)
+(check-expect (perm-count SCG1) 4)
 
 ;; natural-graph : [Graph X] -> [Graph Natural]
 ;; Convert the graph to a natural graph
@@ -507,23 +566,23 @@
                                                [(= n 6) '()]))
                                        =)) true)
 
-;; nat-size-graph : [Graph X] ->  [Sorted-Size-Graph Natural]
-;; Converts a graph into a sorted natural size graph
-(define (nat-size-graph g)
-  (sort-size-graph (size-graph (natural-graph g))))
-(check-expect (same-graph? (nat-size-graph G1)
-                           (local ((define equals? (pair=? = =)))
-                             (sort-size-graph (make-graph 
-                                               (map list '(0 1 2 3 4 5 6) '(2 2 1 0 3 2 0))
-                                               (lambda (n)
-                                                 (cond [(equals? n '(0 2)) '((1 2) (4 3))]
-                                                       [(equals? n '(1 2)) '((4 3) (5 2))]
-                                                       [(equals? n '(2 1)) '((3 0))]
-                                                       [(equals? n '(3 0)) '()]
-                                                       [(equals? n '(4 3)) '((2 1) (5 2) (0 2))]
-                                                       [(equals? n '(5 2)) '((3 0) (6 0))]
-                                                       [(equals? n '(6 0)) '()]))
-                                               equals?)))) true)
+;; nat-connection-graph : [Graph X] ->  [Sorted-Connection-Graph Natural]
+;; Converts a graph into a sorted natural connection graph
+(define (nat-connection-graph g)
+  (sort-connection-graph (connection-graph (natural-graph g))))
+(check-expect (same-graph? (nat-connection-graph G1)
+                             (local ((define equals? (pair=? = =)))
+                               (sort-connection-graph (make-graph 
+                                                 (map list '(0 1 2 3 4 5 6) '(403 403 4 2 23649 18 2))
+                                                 (lambda (n)
+                                                   (cond [(equals? n '(0 403)) '((1 403) (4 23649))]
+                                                         [(equals? n '(1 403)) '((4 23649) (5 18))]
+                                                         [(equals? n '(2 4)) '((3 2))]
+                                                         [(equals? n '(3 2)) '()]
+                                                         [(equals? n '(4 23649)) '((2 4) (5 18) (0 403))]
+                                                         [(equals? n '(5 18)) '((3 2) (6 2))]
+                                                         [(equals? n '(6 2)) '()]))
+                                                 equals?)))) true)
 ;                                             _                            __  
 ;   ____   ___  , _ , _     ___          ____ /        ___  \,___,   ___  /  `.
 ;  (      /   ` |' `|' `. .'   ` .---'  (     |,---.  /   ` |    \ .'   ` `   '
@@ -533,21 +592,21 @@
 
 ;; same-shape?
 
-;; same-shape-helper? : [Equality [Sorted-Size-Graph Natural]]
+;; same-shape-helper? : [Equality [Sorted-Connection-Graph Natural]]
 ;; Are the graphs of the same shape
 (define (same-shape-helper g1 g2)
   (local ((define (loop n)
             (and (not (= n -1))
-                 (or (same-graph? g1 (change-ssg g2 n))
+                 (or (same-graph? g1 (change-scg g2 n))
                      (loop (sub1 n))))))
     (loop (sub1 (perm-count g1)))))
 ;; same-shape? : [Equality Graph]
 ;; Do two graphs have the same shape?
 (define (same-shape? g1 g2)
   (and (= (length (graph-nodes g1)) (length (graph-nodes g2)))
-       (list=? (neighbor-size-list g1) (neighbor-size-list g2) =)
-       (same-shape-helper (nat-size-graph g1)
-                          (swap-names (nat-size-graph g1) (nat-size-graph g2)))))
+       (list=? (hash-list g1) (hash-list g2) =)
+       (same-shape-helper (nat-connection-graph g1)
+                          (swap-names (nat-connection-graph g1) (nat-connection-graph g2)))))
 (check-expect (same-shape? (make-graph '(a) (λ (n) empty) symbol=?) 
                            (make-graph '(a) (λ (n) empty) symbol=?)) true)
 (check-expect (same-shape? (make-graph '(a) (λ (n) '(a)) symbol=?) 
@@ -638,6 +697,6 @@
 (check-expect ((equivalence-check same-shape?) '()) true)
 (check-expect ((equivalence-check =) '(5 5 5)) true)
 (check-expect ((equivalence-check =) '(5 6 5)) false)
-(check-expect ((equivalence-check same-shape?) `(,SSG2 ,SSG3)) true) 
-(check-expect ((equivalence-check same-shape?) `(,g1 ,G1 ,SG1 ,SSG1)) true)
-(check-expect ((equivalence-check same-shape?) `(,SSG1 ,SSG2)) false)
+(check-expect ((equivalence-check same-shape?) `(,SCG2 ,SCG3)) true) 
+(check-expect ((equivalence-check same-shape?) `(,g1 ,G1 ,CG1 ,SCG1)) true)
+(check-expect ((equivalence-check same-shape?) `(,SCG1 ,SCG2)) false)
