@@ -626,8 +626,6 @@
 
 ;; equivalence-check : [Equality X] -> [[List X] -> Boolean]
 ;; Generates a check for an equivalence 
-;; (list of elements given to generated function must be equal
-;; under eq)
 (define (equivalence-check eq)
   (λ (listx)
     (local ((define (loop listx)
@@ -637,6 +635,9 @@
                                            (eq (first listx) x))) (rest listx))
                        (loop (rest listx))))))
       (loop listx))))
-
-(check-expect ((equivalence-check same-shape?) (list SSG2 SSG3)) true) 
-(check-expect ((equivalence-check same-shape?) (list g1 G1 SG1 SSG1)) true)
+(check-expect ((equivalence-check same-shape?) '()) true)
+(check-expect ((equivalence-check =) '(5 5 5)) true)
+(check-expect ((equivalence-check =) '(5 6 5)) false)
+(check-expect ((equivalence-check same-shape?) `(,SSG2 ,SSG3)) true) 
+(check-expect ((equivalence-check same-shape?) `(,g1 ,G1 ,SG1 ,SSG1)) true)
+(check-expect ((equivalence-check same-shape?) `(,SSG1 ,SSG2)) false)
