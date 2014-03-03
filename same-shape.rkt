@@ -22,7 +22,7 @@
 ;; Document structure:
 ;; Data Definitions
 ;; List Functions (helpers)
-;; Bin, Choice, and Factorial (helpers - explained in data definitions)
+;; Bin and Choice (helpers - explained in data definitions)
 ;; Examples (of graphs-related data definitions)
 ;; Graph Functions (helpers)
 ;; same-shape? (the final result and many tests)
@@ -154,19 +154,13 @@
 (check-expect ((simple-map '(0 1 2) '(3 4 5) =) 1) 4)
 (check-error ((simple-map '(0 1 2) '(3 4 5) =) 3) "not here")
 
-; ____                     ___  _                                               
-; /   \  ` , __          .'   \ /        __.  `   ___    ___                    
-; |,_-<  | |'  `.        |      |,---. .'   \ | .'   ` .'   `                   
-; |    ` | |    |        |      |'   ` |    | | |      |----'                   
-; `----' / /    | ,       `.__, /    |  `._.' /  `._.' `.___, ,                 
-;                 /                                           /                 
-;                    _      .____                .                           .  
-;   ___  , __     ___/      /       ___    ___  _/_     __.  .___  `   ___   |  
-;  /   ` |'  `.  /   |      |__.   /   ` .'   `  |    .'   \ /   \ |  /   `  |  
-; |    | |    | ,'   |      |     |    | |       |    |    | |   ' | |    |  |  
-; `.__/| /    | `___,'      /     `.__/|  `._.'  \__/  `._.' /     / `.__/| /\__
+; ____                                    _        ___  _                            
+; /   \  ` , __          ___  , __     ___/      .'   \ /        __.  `   ___    ___ 
+; |,_-<  | |'  `.       /   ` |'  `.  /   |      |      |,---. .'   \ | .'   ` .'   `
+; |    ` | |    |      |    | |    | ,'   |      |      |'   ` |    | | |      |----'
+; `----' / /    |      `.__/| /    | `___,'       `.__, /    |  `._.' /  `._.' `.___,
 
-;; Bin, Choice, and Factorial
+;; Bin and Choice
 
 ;; ! : Natural -> Positive
 ;; x!
