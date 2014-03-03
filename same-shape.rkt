@@ -23,8 +23,7 @@
 ;; Bin and Choice (helpers - explained in data definitions)
 ;; Hash (helpers)
 ;; Examples (of graphs-related data definitions)
-;; Graph Functions (helpers)
-;; same-shape? (the final result and many tests)
+;; Graph Functions (helpers and, in the end, same-shape? and many tests)
 
 ;; To easily find one section, View -> Show Program Contour (or command+u/ctrl+u)
 ;; or command+f/ctrl+f
@@ -428,8 +427,6 @@
                            (make-graph '(a) (lambda (x) '()) symbol=?)) true)
 (check-expect (same-graph? (make-graph '(b) (lambda (x) '()) symbol=?)
                            (make-graph '(a) (lambda (x) '()) symbol=?)) false)
-(check-expect (same-graph? (make-graph '(a b) (lambda (x) '()) symbol=?)
-                           (make-graph '(b a) (lambda (x) '()) symbol=?)) true)
 (check-expect (same-graph? (make-graph '(a b) 
                                        (lambda (x)
                                          (cond 
@@ -608,23 +605,16 @@
                                        [(equals? n '(5 18)) '((3 2) (6 2))]
                                        [(equals? n '(6 2)) '()]))
                                equals?)))) true)
-;                                             _                            __  
-;   ____   ___  , _ , _     ___          ____ /        ___  \,___,   ___  /  `.
-;  (      /   ` |' `|' `. .'   ` .---'  (     |,---.  /   ` |    \ .'   ` `   '
-;  `--.  |    | |   |   | |----'        `--.  |'   ` |    | |    | |----'    / 
-; \___.' `.__/| /   '   / `.___,       \___.' /    | `.__/| |`---' `.___,   ,  
-;                                                           \               ' 
-
-;; same-shape?
 
 ;; same-shape-helper? : [Equality [Sorted-Connection-Graph Natural]]
 ;; Are the graphs of the same shape
-(define (same-shape-helper g1 g2)
+(define (same-shape-helper scg1 scg2)
   (local ((define (loop n)
             (and (not (= n -1))
-                 (or (same-graph? g1 (change-scg g2 n))
+                 (or (same-graph? scg1 (change-scg scg2 n))
                      (loop (sub1 n))))))
-    (loop (sub1 (perm-count g1)))))
+    (loop (sub1 (perm-count scg1)))))
+
 ;; same-shape? : [Equality Graph]
 ;; Do two graphs have the same shape?
 (define (same-shape? g1 g2)
@@ -665,64 +655,50 @@
                                        (λ (node)
                                          (local ((define (f sym)
                                                    (symbol=? sym node)))
-                                           (cond [(f 'a) '(f e g)]
-                                                 [(f 'b) '()]
-                                                 [(f 'c) '()]
-                                                 [(f 'd) '(a c b)]
-                                                 [(f 'e) '(e)]
-                                                 [(f 'f) '(f)]
+                                           (cond [(f 'a) '(f e g)] [(f 'b) '()]
+                                                 [(f 'c) '()] [(f 'd) '(a c b)]
+                                                 [(f 'e) '(e)] [(f 'f) '(f)]
                                                  [(f 'g) '(c)]))) symbol=?)
                            (make-graph 
                             (kth-perm (list "a" "b" "c" "d" "e" "f" "g") (random (! 7)))
                             (λ (node)
                               (local ((define (f str)
                                         (string=? str node)))
-                                (cond [(f "a") '()]
-                                      [(f "b") '()]
-                                      [(f "c") '("d" "e" "f")]
-                                      [(f "d") '("d")]
-                                      [(f "e") '("e")]
-                                      [(f "f") '("a")]
+                                (cond [(f "a") '()] [(f "b") '()]
+                                      [(f "c") '("d" "e" "f")] [(f "d") '("d")]
+                                      [(f "e") '("e")] [(f "f") '("a")]
                                       [(f "g") '("c" "a" "b")]))) string=?)) true)
 (check-expect (same-shape? (make-graph '(a b c d e f g)
                                        (λ (node)
                                          (local ((define (f sym)
                                                    (symbol=? sym node)))
-                                           (cond [(f 'a) '(f e g)]
-                                                 [(f 'b) '()]
-                                                 [(f 'c) '()]
-                                                 [(f 'd) '(a c b)]
-                                                 [(f 'e) '(e)]
-                                                 [(f 'f) '(f)]
+                                           (cond [(f 'a) '(f e g)] [(f 'b) '()]
+                                                 [(f 'c) '()] [(f 'd) '(a c b)]
+                                                 [(f 'e) '(e)] [(f 'f) '(f)]
                                                  [(f 'g) '(c)]))) symbol=?)
                            (make-graph 
                             (kth-perm (list "a" "b" "c" "d" "e" "f" "g") (random (! 7)))
                             (λ (node)
                               (local ((define (f str)
                                         (string=? str node)))
-                                (cond [(f "a") '()]
-                                      [(f "b") '()]
-                                      [(f "c") '("d" "e" "f")]
-                                      [(f "d") '("d")]
-                                      [(f "e") '("e")]
-                                      [(f "f") '("a")]
+                                (cond [(f "a") '()] [(f "b") '()]
+                                      [(f "c") '("d" "e" "f")] [(f "d") '("d")]
+                                      [(f "e") '("e")] [(f "f") '("a")]
                                       [(f "g") '("d" "a" "b")]))) string=?)) false)
 ;; Checks for equivalence relation
-
-;; equivalence-check : [Equality X] -> [[List X] -> Boolean]
-;; Generates a check for an equivalence 
-(define (equivalence-check eq)
-  (λ (listx)
+;; equivalence-check : [Equality X] x [List X] -> Boolean
+;; checks to see that all elements are equal to each other
+(define (equivalence-check eq listx)
     (local ((define (loop listx)
               (or (empty? listx)
                   (and (eq (first listx) (first listx))
                        (andmap (λ (x) (and (eq x (first listx))
                                            (eq (first listx) x))) (rest listx))
                        (loop (rest listx))))))
-      (loop listx))))
-(check-expect ((equivalence-check same-shape?) '()) true)
-(check-expect ((equivalence-check =) '(5 5 5)) true)
-(check-expect ((equivalence-check =) '(5 6 5)) false)
-(check-expect ((equivalence-check same-shape?) `(,SCG2 ,SCG3)) true) 
-(check-expect ((equivalence-check same-shape?) `(,g1 ,G1 ,CG1 ,SCG1)) true)
-(check-expect ((equivalence-check same-shape?) `(,SCG1 ,SCG2)) false)
+      (loop listx)))
+(check-expect (equivalence-check same-shape? '()) true)
+(check-expect (equivalence-check = '(5 5 5)) true)
+(check-expect (equivalence-check = '(5 6 5)) false)
+(check-expect (equivalence-check same-shape? `(,SCG2 ,SCG3)) true) 
+(check-expect (equivalence-check same-shape? `(,g1 ,G1 ,CG1 ,SCG1)) true)
+(check-expect (equivalence-check same-shape? `(,SCG1 ,SCG2)) false)
