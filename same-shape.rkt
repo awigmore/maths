@@ -280,6 +280,7 @@
 (check-expect (all-unique empty =) true)
 (check-expect (all-unique '(1 2 3 4 5 6 7 8 9 10) =) true)
 (check-expect (all-unique '(1 2 3 4 5 1 7 8 9 10) =) false)
+
 ;; pairing-function : Nat x Nat -> Positive
 ;; A hash for two nats
 (define (pairing-function x y)
@@ -290,19 +291,39 @@
                                     (pairing-function (first y) (second y))))) =)
               true)
 
+;; pair-off : [List Nat] -> [List Nat]
+;; Pairs off a list of naturals by applying the pairing-function
+;; to every pair of numbers
+(define (pair-off x)
+  (if (or (empty? x) (empty? (rest x))) x
+      (cons (pairing-function (first x) (second x)) 
+            (pair-off (rest (rest x))))))
+(check-expect (pair-off empty) empty)
+(check-expect (pair-off '(1)) '(1))
+(check-expect (pair-off '(0 1)) (list (pairing-function 0 1)))
+(check-expect (pair-off '(0 1 2 3)) 
+              (list (pairing-function 0 1) 
+                    (pairing-function 2 3)))
+(check-expect (pair-off '(0 1 2 3 4)) 
+              (list (pairing-function 0 1) (pairing-function 2 3) 4))
+
 ;; hash-nats : [List Nat] -> Integer
 ;; hash a list of nats
 (define (hash-nats x)
-  (local ((define (pair-off x)
-            (if (or (empty? x) (empty? (rest x))) x
-                (cons (pairing-function (first x) (second x)) (pair-off (rest (rest x))))))
-          (define (hash-nats x)
+  (local ((define (hash-nats x)
             (cond 
               [(empty? x) 0]
               [(empty? (rest x)) (first x)]
               [(empty? (rest (rest x))) (pairing-function (first x) (second x))]
               [else (hash-nats (pair-off x))])))
     (pairing-function (length x) (hash-nats x))))
+(check-expect (hash-nats '(0 1 2 3 4))
+              (pairing-function 5 
+                                (pairing-function 
+                                 (pairing-function 
+                                  (pairing-function 0 1) 
+                                  (pairing-function 2 3)) 
+                                 4)))
 
 ;; all-unique-test : Natural -> Boolean
 ;; Makes sure hash-nats generates unique values
