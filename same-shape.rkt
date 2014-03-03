@@ -477,9 +477,8 @@
 (define (connection-graph g)
   (local ((define newnodes (map list (graph-nodes g) (hash-list g)))
           (define (lookup oldnode newnodes)
-            (if (empty? newnodes) (error "oldnode not found in newnodes")
                 (if ((graph-node=? g) oldnode (first (first newnodes))) (first newnodes)
-                    (lookup oldnode (rest newnodes))))))
+                    (lookup oldnode (rest newnodes)))))
     (make-graph newnodes
                 (λ (newnode) 
                   (map (λ (oldnode) (lookup oldnode newnodes)) 
