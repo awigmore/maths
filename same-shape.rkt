@@ -44,7 +44,7 @@
 ;; Data Definitions 
 
 ;; An [Equality X] is a [X X -> Boolean]
-;; That tests for some form of equality 
+;; and is an equivalence relation
 
 (define-struct graph (nodes neighbors node=?))
 ;; A [Graph X] is a (make-graph [List X] [X -> [List X]] [Equality X])
@@ -541,7 +541,7 @@
                  (or (same-graph? g1 (change-ssg g2 n))
                      (loop (sub1 n))))))
     (loop (sub1 (perm-count g1)))))
-;; same-shape? : [Graph X] x [Graph Y] -> Boolean
+;; same-shape? : [Equality Graph]
 ;; Do two graphs have the same shape?
 (define (same-shape? g1 g2)
   (and (= (length (graph-nodes g1)) (length (graph-nodes g2)))
