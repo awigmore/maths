@@ -14,10 +14,8 @@
 ;; One could try every permutation swapping the node names from the first
 ;; with the second, but that's guaranteed factorial time.
 ;; The algorithm used here only alters corresponding nodes with the same
-;; amount of vertices, which, in worst case, is factorial (two graphs
-;; with 20 nodes that each connection to 7 nodes, for example),
-;; but a graph with 20 nodes, 18 of which connect to 0, 1, 2... 17 nodes,
-;; and two of which connect to 20, will execute very quickly.
+;; connection-hash. Currently, it takes the amount of edges coming out from
+;; all of its neighbors and hashes that.
 
 ;; Document structure:
 ;; Data Definitions
@@ -244,7 +242,9 @@
           (define (loop choice bin lox)
             (if (empty? choice) empty
                 (local ((define perm (kth-perm (first-n lox (first bin)) (first choice))))
-                  (append perm (loop (rest choice) (rest bin) (rest-n lox (first bin))))))))
+                  (append perm (loop (rest choice) 
+                                     (rest bin) 
+                                     (rest-n lox (first bin))))))))
     (loop choice bin lox)))
 (define BIN-SWAP-TEST '((0 batman) (1 flash) (2 flash) (3 supes) 
                                    (4 supes) (5 supes) (6 wonderwoman)))
@@ -253,7 +253,8 @@
 ;; The 0th, 1st, 4th, and 0th permutations of the bins will be used
 (check-expect (kth-perm '((0 batman)) 0) '((0 batman)))
 (check-expect (kth-perm '((1 flash) (2 flash)) 1) '((2 flash) (1 flash)))
-(check-expect (kth-perm '((3 supes) (4 supes) (5 supes)) 4) '((5 supes) (3 supes) (4 supes)))
+(check-expect (kth-perm '((3 supes) (4 supes) (5 supes)) 4) 
+              '((5 supes) (3 supes) (4 supes)))
 (check-expect (kth-perm '((6 wonderwoman)) 0) '((6 wonderwoman)))
 ;; The actual bin-swap
 (check-expect (bin-swap BIN-SWAP-TEST '(1 2 3 1) 10)
@@ -319,7 +320,7 @@
                             (choice-maker x (make-list power n))))))))
    =))
 (check-expect (all-unique-test 4) true)
-                            
+
 
 
 
@@ -379,7 +380,7 @@
 ; |       /   \  /   ` |    \ |,---. 
 ; |    _  |   ' |    | |    | |'   `  
 ;  `.___| /     `.__/| |`---' /    |  
-;                      \                                                                        
+;                      \            
 ; .____                      .
 ; /     ,   . , __     ___  _/_   `   __.  , __     ____
 ; |__.  |   | |'  `. .'   `  |    | .'   \ |'  `.  (    
@@ -499,10 +500,12 @@
 (define (swap-names ssg1 ssg2)
   (change-names ssg2 (graph-nodes ssg1)))
 (define SCG2 (make-graph '((a 2) (b 0) (c 0)) 
-                         (λ (node) (if ((pair=? symbol=? =) node '(a 2)) '((a 2) (b 0)) '())) 
+                         (λ (node) (if ((pair=? symbol=? =) node '(a 2)) 
+                                       '((a 2) (b 0)) '())) 
                          (pair=? symbol=? =)))
 (define SCG3 (make-graph '((d 2) (e 0) (f 0)) 
-                         (λ (node) (if ((pair=? symbol=? =) node '(d 2)) '((d 2) (f 0)) '())) 
+                         (λ (node) (if ((pair=? symbol=? =) node '(d 2)) 
+                                       '((d 2) (f 0)) '())) 
                          (pair=? symbol=? =)))
 (check-expect ((graph-neighbors (swap-names SCG2 SCG3)) '(a 2)) '((a 2) (c 0)))
 (check-expect (same-graph?  (swap-names SCG2 SCG3) SCG2) false)
@@ -571,18 +574,19 @@
 (define (nat-connection-graph g)
   (sort-connection-graph (connection-graph (natural-graph g))))
 (check-expect (same-graph? (nat-connection-graph G1)
-                             (local ((define equals? (pair=? = =)))
-                               (sort-connection-graph (make-graph 
-                                                 (map list '(0 1 2 3 4 5 6) '(403 403 4 2 23649 18 2))
-                                                 (lambda (n)
-                                                   (cond [(equals? n '(0 403)) '((1 403) (4 23649))]
-                                                         [(equals? n '(1 403)) '((4 23649) (5 18))]
-                                                         [(equals? n '(2 4)) '((3 2))]
-                                                         [(equals? n '(3 2)) '()]
-                                                         [(equals? n '(4 23649)) '((2 4) (5 18) (0 403))]
-                                                         [(equals? n '(5 18)) '((3 2) (6 2))]
-                                                         [(equals? n '(6 2)) '()]))
-                                                 equals?)))) true)
+                           (local ((define equals? (pair=? = =)))
+                             (sort-connection-graph 
+                              (make-graph 
+                               (map list '(0 1 2 3 4 5 6) '(403 403 4 2 23649 18 2))
+                               (lambda (n)
+                                 (cond [(equals? n '(0 403)) '((1 403) (4 23649))]
+                                       [(equals? n '(1 403)) '((4 23649) (5 18))]
+                                       [(equals? n '(2 4)) '((3 2))]
+                                       [(equals? n '(3 2)) '()]
+                                       [(equals? n '(4 23649)) '((2 4) (5 18) (0 403))]
+                                       [(equals? n '(5 18)) '((3 2) (6 2))]
+                                       [(equals? n '(6 2)) '()]))
+                               equals?)))) true)
 ;                                             _                            __  
 ;   ____   ___  , _ , _     ___          ____ /        ___  \,___,   ___  /  `.
 ;  (      /   ` |' `|' `. .'   ` .---'  (     |,---.  /   ` |    \ .'   ` `   '
@@ -606,7 +610,8 @@
   (and (= (length (graph-nodes g1)) (length (graph-nodes g2)))
        (list=? (hash-list g1) (hash-list g2) =)
        (same-shape-helper (nat-connection-graph g1)
-                          (swap-names (nat-connection-graph g1) (nat-connection-graph g2)))))
+                          (swap-names (nat-connection-graph g1) 
+                                      (nat-connection-graph g2)))))
 (check-expect (same-shape? (make-graph '(a) (λ (n) empty) symbol=?) 
                            (make-graph '(a) (λ (n) empty) symbol=?)) true)
 (check-expect (same-shape? (make-graph '(a) (λ (n) '(a)) symbol=?) 
