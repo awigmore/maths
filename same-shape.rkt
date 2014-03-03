@@ -576,7 +576,6 @@
                                            [(= node 3) '(1 2)]
                                            [(= node 1) '(1 3)]
                                            [(= node 2) '(1)])) =)) false)
-(check-expect (same-shape? g1 G1) true)
 (check-expect (same-shape? (make-graph '(a b c d e f g)
                                        (λ (node)
                                          (local ((define (f sym)
@@ -624,16 +623,20 @@
                                       [(f "f") '("a")]
                                       [(f "g") '("d" "a" "b")]))) string=?)) false)
 ;; Checks for equivalence relation
-(check-expect (same-shape? SSG2 SSG3) true)
-(check-expect (same-shape? SSG3 SSG2) true)
-(check-expect (same-shape? SSG2 SSG2) true)
-(check-expect (same-shape? SSG3 SSG3) true)
-(check-expect (same-shape? G1 G1) true)
-(check-expect (same-shape? SG1 G1) true)
-(check-expect (same-shape? G1 SG1) true)
-(check-expect (same-shape? SG1 SG1) true)
-(check-expect (same-shape? SSG1 SG1) true)
-(check-expect (same-shape? SG1 SSG1) true)
-(check-expect (same-shape? SSG1 SSG1) true)
-(check-expect (same-shape? G1 SSG1) true)
-(check-expect (same-shape? SSG1 G1) true)
+
+;; equivalence-check : [Equality X] -> [[List X] -> Boolean]
+;; Generates a check for an equivalence 
+;; (list of elements given to generated function must be equal
+;; under eq)
+(define (equivalence-check eq)
+  (λ (listx)
+    (local ((define (loop listx)
+              (or (empty? listx)
+                  (and (eq (first listx) (first listx))
+                       (andmap (λ (x) (and (eq x (first listx))
+                                           (eq (first listx) x))) (rest listx))
+                       (loop (rest listx))))))
+      (loop listx))))
+
+(check-expect ((equivalence-check same-shape?) (list SSG2 SSG3)) true) 
+(check-expect ((equivalence-check same-shape?) (list g1 G1 SG1 SSG1)) true)
