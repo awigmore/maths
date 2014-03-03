@@ -148,10 +148,10 @@
 ;; (length x1) = (length x2)
 (define (simple-map x1 x2 equals?)
   (λ (x)
-    (local ((define (dumb-map x1 x2)
+    (local ((define (simple-map x1 x2)
               (if (empty? x1) (error "not here")
-                  (if (equals? x (first x1)) (first x2) (dumb-map (rest x1) (rest x2))))))
-      (dumb-map x1 x2))))
+                  (if (equals? x (first x1)) (first x2) (simple-map (rest x1) (rest x2))))))
+      (simple-map x1 x2))))
 (check-expect ((simple-map '(0 1 2) '(3 4 5) =) 1) 4)
 (check-error ((simple-map '(0 1 2) '(3 4 5) =) 3) "not here")
 
