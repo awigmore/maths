@@ -357,10 +357,14 @@
                        [(equals? n '(F 18)) '((D 2) (G 2))]
                        [(equals? n '(G 2)) '()]))
                equals?)))
+;; hashes for the indivudal nodes
+(check-expect (hash-nats '(3 2)) 403) ; 'A 'B
+(check-expect (hash-nats '(0)) 4) ; 'C 'G
+(check-expect (hash-nats '()) 2) ; 'D
+(check-expect (hash-nats '(2 2 1)) 23649) ; 'E
+(check-expect (hash-nats '(0 0)) 18) ; 'F
 (check-expect ((graph-neighbors CG1) '(A 403)) '((B 403) (E 23649)))
 (check-expect ((graph-neighbors CG1) '(G 2)) '())
-
-
 
 ;; SSG1 is a [Sorted-Connection-Graph Symbol] and is
 ;; the sorted-connection-graph version of CG1
